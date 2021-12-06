@@ -1,0 +1,52 @@
+---
+title: "Homework8"
+output: html_document
+---
+
+```{r}
+# List of all packages 
+load.lib<-c("tidyverse", "rgdal", "raster","caret","sp",
+"nnet","randomForest","kernlab","e1071")
+
+# tidyverse - a collection of packages
+# rgdal - the R GeoData Abstraction Layer (GDAL) - 
+
+# Loop through the packages, check if not installed, if true, install with dependencies. 
+
+install.lib<-load.lib[!load.lib %in% installed.packages()]
+for(lib in install.lib) install.packages(lib,dependencies=TRUE)
+sapply(load.lib,require,character=TRUE)
+```
+
+```{r}
+# Load the Sentinel-2 stack of the study area, from the raster library
+s2data = raster::stack("Data/S2StackSmall.tif")
+
+# Name the layers of the Sentinel-2 stack based on previously saved information
+names(s2data) = as.character(read.csv("Data/S2StackSmall_Names.csv")[,1])
+
+```
+
+```{r}
+# We can pass the s2data to plot, I will select the Band 3 data. 
+plot(s2data$B03M)
+```
+
+```{r}
+samples = read.csv("Data/Samples.csv")
+
+# Split the data frame into 80-20 by class
+trainx = list(0)
+evalx = list(0)
+for (i in 1:8){ # loop through all eight classes
+  cls = samples[samples$class == i,]
+  smpl <- floor(0.80 * nrow(cls))
+  tt <- sample(seq_len(nrow(cls)), size = smpl)
+  trainx[[i]] <- cls[tt,]
+  evalx[[i]] <- cls[-tt,]
+}
+
+# combine them all into training and evaluation data frames
+trn = do.call(rbind, trainx) 
+eva = do.call(rbind, evalx)
+```
